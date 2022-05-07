@@ -10,19 +10,78 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers;
+
+  const user = users.find(pUser => pUser.username === username);
+
+  if(user === undefined) {
+    return response.status(404).json({ error : 'User not found.'});
+  }
+
+  request.user = user;
+  return next();
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const {user} = request;
+  const isPro = user.pro;
+    
+  if(user.pro) {
+    return next();
+  }
+
+  const totalToDo = user.todos.length
+  const isAvailable = totalToDo < 10 && totalToDo > -1;
+
+  if(isAvailable) {
+    return next();
+  }
+
+  return response.status(403).json({ error: 'User should contract the Premium Plan.'});
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const {username} = request.headers;
+  const {id} = request.params;
+
+  const checkUserID = validate(id, 4);
+  if (!checkUserID){
+    return response.status(400).json({error: 'ID inválid.'});
+
+  }
+
+  const user = users.find( pUser => pUser.username === username);
+
+  if (user === undefined) {
+    return response.status(404).json({error: "User doesn't exists."});
+  }
+
+  if (user.todos === undefined ) {
+    return response.status(404).json({error: "User has no ToDo associated."});
+  }
+
+  const todo = user.todos.find(pToDo => pToDo.id === id);
+  if (!todo){
+    return response.status(404).json({error: "ID doesn't correspond to any User in our database"});
+  }
+
+  request.todo = todo;
+  request.user = user;
+
+ return next();
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params;
+
+  const user = users.find(pUser => pUser.id === id);
+
+  if(user === undefined) {
+    return response.status(404).json({ error : 'User not found.'});
+  }
+
+  request.user = user;
+  return next();
 }
 
 app.post('/users', (request, response) => {
